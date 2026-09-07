@@ -17,19 +17,22 @@ class DatabaseSeeder extends Seeder
     {
         $users = [
             [
-                'email' => 'admin@safedeal.test',
+                'email' => 'admin',
                 'role' => UserRole::Admin,
                 'display_name' => 'Администратор',
+                'password' => 'admin',
             ],
             [
                 'email' => 'customer@safedeal.test',
                 'role' => UserRole::Customer,
                 'display_name' => 'ТОО Альфа',
+                'password' => 'Password123',
             ],
             [
                 'email' => 'contractor@safedeal.test',
                 'role' => UserRole::Contractor,
                 'display_name' => 'ИП Соколова',
+                'password' => 'Password123',
             ],
         ];
 
@@ -37,7 +40,7 @@ class DatabaseSeeder extends Seeder
             $user = User::query()->updateOrCreate(
                 ['email' => $data['email']],
                 [
-                    'password' => 'Password123',
+                    'password' => $data['password'],
                     'role' => $data['role'],
                     'status' => UserStatus::Active,
                     'email_verified_at' => now(),
@@ -56,7 +59,14 @@ class DatabaseSeeder extends Seeder
 
         $customer = User::query()->where('email', 'customer@safedeal.test')->first();
         $contractor = User::query()->where('email', 'contractor@safedeal.test')->first();
-        $admin = User::query()->where('email', 'admin@safedeal.test')->first();
+        $admin = User::query()->where('email', 'admin')->first();
+
+        // Remove legacy admin email if present after rename.
+        User::query()
+            ->where('email', 'admin@safedeal.test')
+            ->where('role', UserRole::Admin)
+            ->whereKeyNot($admin?->id)
+            ->delete();
 
         /** @var DealService $deals */
         $deals = app(DealService::class);

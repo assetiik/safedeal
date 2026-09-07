@@ -23,9 +23,9 @@ API: `http://127.0.0.1:8000/api/v1`
 
 ### Тестовые пользователи
 
-| Email | Password | Role |
+| Email / логин | Password | Role |
 |-------|----------|------|
-| admin@safedeal.test | Password123 | admin |
+| admin | admin | admin |
 | customer@safedeal.test | Password123 | customer |
 | contractor@safedeal.test | Password123 | contractor |
 
@@ -56,7 +56,7 @@ php artisan serve
 # открыть http://127.0.0.1:8000/admin/login
 ```
 
-Логин: `admin@safedeal.test` / `Password123`
+Логин: `admin` / `admin`
 
 Разделы: дашборд, сделки, пользователи, споры, финансы, документы, аудит-лог.
 

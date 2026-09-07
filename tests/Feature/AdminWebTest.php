@@ -10,6 +10,21 @@ class AdminWebTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_login_with_admin_credentials(): void
+    {
+        User::factory()->admin()->create([
+            'email' => 'admin',
+            'password' => 'admin',
+        ]);
+
+        $this->post(route('admin.login.submit'), [
+            'login' => 'admin',
+            'password' => 'admin',
+        ])->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticated();
+    }
+
     public function test_admin_can_open_dashboard(): void
     {
         $admin = User::factory()->admin()->create([

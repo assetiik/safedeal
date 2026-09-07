@@ -22,12 +22,15 @@ class AuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'login' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'Неверный email или пароль'])->onlyInput('email');
+        if (! Auth::attempt([
+            'email' => $credentials['login'],
+            'password' => $credentials['password'],
+        ], $request->boolean('remember'))) {
+            return back()->withErrors(['login' => 'Неверный логин или пароль'])->onlyInput('login');
         }
 
         $request->session()->regenerate();
@@ -35,7 +38,7 @@ class AuthController extends Controller
         if (! Auth::user()?->isAdmin() || ! Auth::user()->isActive()) {
             Auth::logout();
 
-            return back()->withErrors(['email' => 'Доступ только для активного администратора']);
+            return back()->withErrors(['login' => 'Доступ только для активного администратора']);
         }
 
         return redirect()->intended(route('admin.dashboard'));

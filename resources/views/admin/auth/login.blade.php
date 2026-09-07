@@ -24,14 +24,14 @@
             @csrf
             <div class="space-y-4">
                 <div>
-                    <label class="mb-1.5 block text-sm font-medium text-ink">Email</label>
-                    <input type="email" name="email" value="{{ old('email', 'admin@safedeal.test') }}" class="input" required autofocus>
+                    <label class="mb-1.5 block text-sm font-medium text-ink">Логин</label>
+                    <input type="text" name="login" value="{{ old('login') }}" class="input" required autofocus autocomplete="username">
                 </div>
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-ink">Пароль</label>
-                    <input type="password" name="password" value="Password123" class="input" required>
+                    <input type="password" name="password" class="input" required autocomplete="current-password">
                 </div>
-                @error('email')
+                @error('login')
                     <p class="text-sm text-danger">{{ $message }}</p>
                 @enderror
                 <label class="flex items-center gap-2 text-sm text-muted">
