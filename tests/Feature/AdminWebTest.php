@@ -13,7 +13,7 @@ class AdminWebTest extends TestCase
     public function test_admin_can_login_with_admin_credentials(): void
     {
         User::factory()->admin()->create([
-            'email' => 'admin',
+            'email' => 'admin@safedeal.test',
             'password' => 'admin',
         ]);
 

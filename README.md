@@ -25,7 +25,7 @@ API: `http://127.0.0.1:8000/api/v1`
 
 | Email / логин | Password | Role |
 |-------|----------|------|
-| admin | admin | admin |
+| admin (или admin@safedeal.test) | admin | admin |
 | customer@safedeal.test | Password123 | customer |
 | contractor@safedeal.test | Password123 | contractor |
 

@@ -26,8 +26,13 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        $login = $credentials['login'];
+        if ($login === 'admin') {
+            $login = 'admin@safedeal.test';
+        }
+
         if (! Auth::attempt([
-            'email' => $credentials['login'],
+            'email' => $login,
             'password' => $credentials['password'],
         ], $request->boolean('remember'))) {
             return back()->withErrors(['login' => 'Неверный логин или пароль'])->onlyInput('login');

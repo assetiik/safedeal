@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         $users = [
             [
-                'email' => 'admin',
+                'email' => 'admin@safedeal.test',
                 'role' => UserRole::Admin,
                 'display_name' => 'Администратор',
                 'password' => 'admin',
@@ -59,11 +59,11 @@ class DatabaseSeeder extends Seeder
 
         $customer = User::query()->where('email', 'customer@safedeal.test')->first();
         $contractor = User::query()->where('email', 'contractor@safedeal.test')->first();
-        $admin = User::query()->where('email', 'admin')->first();
+        $admin = User::query()->where('email', 'admin@safedeal.test')->first();
 
-        // Remove legacy admin email if present after rename.
+        // Remove invalid legacy admin login used briefly as email="admin".
         User::query()
-            ->where('email', 'admin@safedeal.test')
+            ->where('email', 'admin')
             ->where('role', UserRole::Admin)
             ->whereKeyNot($admin?->id)
             ->delete();
