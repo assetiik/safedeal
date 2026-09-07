@@ -1,0 +1,14 @@
+services:
+  safedeal:
+    build: .
+    container_name: safedeal-app
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      APP_URL: "http://89.207.251.140:8001"
+    volumes:
+      - safedeal_data:/data
+
+volumes:
+  safedeal_data:

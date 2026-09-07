@@ -1,0 +1,364 @@
+openapi: 3.0.3
+info:
+  title: SafeDeal API
+  version: 1.0.0
+  description: Escrow deals API for Flutter Web client
+servers:
+  - url: http://127.0.0.1:8000/api/v1
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register customer or contractor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role, accepted_terms]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                role: { type: string, enum: [customer, contractor] }
+                accepted_terms: { type: boolean }
+      responses:
+        '201':
+          description: Created
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: OK
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: OK
+  /auth/logout:
+    post:
+      tags: [Auth]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+      responses:
+        '200':
+          description: Always 200
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code, new_password]
+              properties:
+                email: { type: string }
+                code: { type: string }
+                token: { type: string }
+                new_password: { type: string }
+      responses:
+        '200':
+          description: OK
+  /me:
+    get:
+      tags: [Profile]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Current user
+  /me/profile:
+    patch:
+      tags: [Profile]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Updated
+  /me/change-password:
+    post:
+      tags: [Profile]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Home widgets
+  /deals:
+    get:
+      tags: [Deals]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: filter
+          schema: { type: string, enum: [all, active, completed, dispute] }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: page_size
+          schema: { type: integer }
+      responses:
+        '200':
+          description: List
+    post:
+      tags: [Deals]
+      security: [{ bearerAuth: [] }]
+      summary: Create deal (customer)
+      responses:
+        '201':
+          description: Created
+  /deals/{id}:
+    get:
+      tags: [Deals]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Deal card
+  /deals/{id}/actions/{action}:
+    post:
+      tags: [Deals]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+        - in: path
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [accept_invitation, decline_invitation, confirm_contract, mark_work_completed, confirm_completion]
+      responses:
+        '200':
+          description: Updated deal
+  /deals/{id}/contract:
+    get:
+      tags: [Contract]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Contract body
+  /deals/{id}/contract/confirm:
+    post:
+      tags: [Contract]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Deal after confirm
+  /deals/{id}/payment:
+    get:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Payment summary
+  /deals/{id}/payment/reserve:
+    post:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+        - in: header
+          name: Idempotency-Key
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Reserve result
+  /deals/{id}/disputes:
+    post:
+      tags: [Disputes]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '201':
+          description: Dispute opened
+  /disputes:
+    get:
+      tags: [Disputes]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List
+  /disputes/{id}:
+    get:
+      tags: [Disputes]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Dispute card
+  /documents:
+    get:
+      tags: [Documents]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List
+  /deals/{id}/documents:
+    get:
+      tags: [Documents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Deal documents
+    post:
+      tags: [Documents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '201':
+          description: Uploaded
+  /documents/{id}:
+    get:
+      tags: [Documents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Metadata
+  /documents/{id}/download:
+    get:
+      tags: [Documents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Signed URL
+  /notifications:
+    get:
+      tags: [Notifications]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List
+  /notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Marked
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /payments/webhooks/{provider}:
+    post:
+      tags: [Payments]
+      summary: Provider webhook
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Accepted
+  /admin/dashboard:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Counters
+  /admin/disputes:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Queue
+  /admin/disputes/{id}/take:
+    post:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: In review
+  /admin/disputes/{id}/resolve:
+    post:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Resolved
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum
+  parameters:
+    UuidId:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, format: uuid }

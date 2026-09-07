@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
+    --color-brand-50: #eef3ff;
+    --color-brand-100: #dbe6ff;
+    --color-brand-200: #c2d4ff;
+    --color-brand-400: #5b8cff;
+    --color-brand-500: #3b6ef5;
+    --color-brand-600: #2f5de0;
+    --color-brand-700: #2448b8;
+    --color-ink: #111827;
+    --color-muted: #6b7280;
+    --color-line: #ebeef5;
+    --color-surface: #f3f5f9;
+    --color-ok: #16a34a;
+    --color-warn: #d97706;
+    --color-danger: #e11d48;
+}
+
+@layer base {
+    html { scroll-behavior: smooth; }
+
+    body {
+        @apply bg-surface text-ink antialiased;
+        font-family: var(--font-sans);
+        background-color: #f3f5f9;
+        background-image:
+            radial-gradient(900px 420px at 12% -8%, rgba(59, 110, 245, 0.08), transparent 55%),
+            radial-gradient(700px 360px at 100% 0%, rgba(59, 110, 245, 0.05), transparent 50%);
+        background-attachment: fixed;
+    }
+
+    h1, h2, h3, .font-display {
+        font-family: var(--font-display);
+    }
+
+    [x-cloak] { display: none !important; }
+}
+
+@layer components {
+    .admin-shell { @apply min-h-screen; }
+
+    .admin-sidebar {
+        @apply fixed inset-y-0 left-0 z-30 flex w-[260px] flex-col border-r border-line bg-white;
+    }
+
+    .admin-main { @apply ml-[260px] min-h-screen; }
+
+    .nav-link {
+        @apply flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium text-muted transition;
+    }
+
+    .nav-link:hover { @apply bg-brand-50 text-brand-600; }
+
+    .nav-link.is-active {
+        @apply bg-brand-500 text-white shadow-[0_8px_20px_rgba(59,110,245,0.28)];
+    }
+
+    .nav-link.is-active:hover { @apply bg-brand-600 text-white; }
+
+    .panel {
+        @apply rounded-[22px] border border-line bg-white shadow-[0_1px_2px_rgba(17,24,39,0.03)];
+    }
+
+    .stat-card {
+        @apply relative overflow-hidden rounded-[22px] border border-line bg-white p-5 shadow-[0_1px_2px_rgba(17,24,39,0.03)] transition duration-300;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(17, 24, 39, 0.06);
+    }
+
+    .icon-bubble {
+        @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl;
+    }
+
+    .btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600;
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-danger/25 bg-white px-4 py-2.5 text-sm font-semibold text-danger transition hover:bg-red-50;
+    }
+
+    .btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-brand-50;
+    }
+
+    .input {
+        @apply w-full rounded-2xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
+    }
+
+    .badge {
+        @apply inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold;
+    }
+
+    .badge-ok { @apply bg-emerald-50 text-emerald-700; }
+    .badge-warn { @apply bg-amber-50 text-amber-700; }
+    .badge-danger { @apply bg-rose-50 text-rose-700; }
+    .badge-info { @apply bg-sky-50 text-sky-700; }
+    .badge-muted { @apply bg-slate-100 text-slate-600; }
+
+    .link-more {
+        @apply text-sm font-semibold text-brand-500 hover:text-brand-600;
+    }
+
+    .fade-up { animation: fadeUp 0.45s ease both; }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
