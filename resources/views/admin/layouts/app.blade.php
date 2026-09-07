@@ -13,7 +13,7 @@
     <aside class="admin-sidebar">
         <div class="flex items-center gap-3 border-b border-line px-5 py-5">
             <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_8px_18px_rgba(59,110,245,0.35)]">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" class="h-5 w-5" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12 1.5c-2.338 0-4.5 1.12-5.85 2.9A7.48 7.48 0 0 0 4.5 9v1.5A2.25 2.25 0 0 0 2.25 12.75v6A2.25 2.25 0 0 0 4.5 21h15a2.25 2.25 0 0 0 2.25-2.25v-6A2.25 2.25 0 0 0 19.5 10.5V9a7.48 7.48 0 0 0-1.65-4.6A7.48 7.48 0 0 0 12 1.5Zm-3.75 9V9a3.75 3.75 0 1 1 7.5 0v1.5h-7.5Z" clip-rule="evenodd" />
                 </svg>
             </div>

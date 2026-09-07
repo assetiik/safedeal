@@ -49,6 +49,32 @@ API: `http://127.0.0.1:8000/api/v1`
 - `docs/ERROR_CODES.md` — коды ошибок
 - `docs/DEPLOY.md` — деплой
 
+## Docker (staging/VPS)
+
+```bash
+# на сервере
+cd /var/www/safedeal
+# остановить старый artisan serve, если был
+pkill -f "artisan serve" || true
+
+# установить Docker (один раз)
+apt-get update
+apt-get install -y docker.io docker-compose-v2
+systemctl enable --now docker
+
+git pull
+docker compose down
+docker compose up -d --build
+docker compose logs -f --tail=50
+```
+
+- API / админка: `http://194.32.141.214:8001`
+- Flutter Base URL: `http://194.32.141.214:8001/api/v1`
+- Логин админки: `admin` / `admin`
+- Health: `GET /up`
+
+Данные SQLite и storage живут в volume `safedeal_data` и переживают rebuild.
+
 ## Админ-панель (веб)
 
 ```bash
@@ -65,4 +91,3 @@ php artisan serve
 ```bash
 php artisan test
 ```
-# safedeal

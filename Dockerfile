@@ -1,3 +1,12 @@
+FROM node:22-bookworm AS frontend
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+
 FROM php:8.4-cli-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -12,6 +21,7 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts -o
 
 COPY . .
+COPY --from=frontend /app/public/build ./public/build
 
 RUN mkdir -p database storage/framework/{cache,sessions,views} storage/logs storage/app/private/documents bootstrap/cache \
     && touch database/database.sqlite \
