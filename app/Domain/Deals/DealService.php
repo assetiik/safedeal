@@ -10,6 +10,7 @@ use App\Domain\Payments\PaymentService;
 use App\Enums\AuditAction;
 use App\Enums\DealAction;
 use App\Enums\DealStatus;
+use App\Enums\DealVisibility;
 use App\Enums\DocumentType;
 use App\Enums\NotificationType;
 use App\Enums\PaymentType;
@@ -38,26 +39,40 @@ final class DealService
             throw ApiException::forbidden('Создать сделку может только заказчик');
         }
 
-        $email = Str::lower($payload['executor_email']);
+        $visibility = DealVisibility::from($payload['visibility'] ?? DealVisibility::Private->value);
+        $isPublic = $visibility === DealVisibility::Public;
 
-        if ($email === Str::lower($customer->email)) {
+        $email = $isPublic
+            ? null
+            : Str::lower((string) ($payload['executor_email'] ?? ''));
+
+        if (! $isPublic && $email === '') {
+            throw new ApiException('VALIDATION_ERROR', 'The executor email field is required.', 422);
+        }
+
+        if ($email !== null && $email === Str::lower($customer->email)) {
             throw new ApiException('INVALID_CONTRACTOR', 'Нельзя пригласить самого себя', 400);
         }
 
-        $contractor = User::query()->where('email', $email)->first();
+        $contractor = null;
+        if ($email !== null) {
+            $contractor = User::query()->where('email', $email)->first();
 
-        if ($contractor && $contractor->role !== UserRole::Contractor) {
-            throw new ApiException('INVITE_NOT_CONTRACTOR', 'Указанный email принадлежит не исполнителю', 422);
+            if ($contractor && $contractor->role !== UserRole::Contractor) {
+                throw new ApiException('INVITE_NOT_CONTRACTOR', 'Указанный email принадлежит не исполнителю', 422);
+            }
         }
 
         $amount = (int) $payload['amount_tenge'];
         $rate = (int) config('escrow.commission_rate_bps', 0);
         $commission = intdiv($amount * $rate, 10_000);
 
-        $deal = DB::transaction(function () use ($customer, $payload, $email, $contractor, $amount, $rate, $commission) {
+        $deal = DB::transaction(function () use ($customer, $payload, $email, $contractor, $amount, $rate, $commission, $visibility, $isPublic) {
             $deal = Deal::query()->create([
                 'deal_number' => $this->nextNumber(),
                 'status' => DealStatus::AwaitingExecutor,
+                'visibility' => $visibility,
+                'specialty' => $payload['specialty'] ?? null,
                 'title' => $payload['title'],
                 'description' => $payload['description'],
                 'amount_tenge' => $amount,
@@ -69,8 +84,8 @@ final class DealService
                 'additional_terms' => $payload['additional_terms'] ?? null,
                 'required_documents' => $payload['required_documents'] ?? [],
                 'customer_user_id' => $customer->id,
-                'contractor_user_id' => $contractor?->id,
-                'contractor_invite_email' => $email,
+                'contractor_user_id' => $isPublic ? null : $contractor?->id,
+                'contractor_invite_email' => $email ?? '',
             ]);
 
             $body = $this->contracts->render($deal->load(['customer.profile', 'contractor.profile']));
@@ -85,6 +100,8 @@ final class DealService
             $this->audit->record(AuditAction::DealCreated, $deal, $customer, $deal->id, [
                 'title' => $deal->title,
                 'amount_tenge' => $deal->amount_tenge,
+                'visibility' => $visibility->value,
+                'specialty' => $deal->specialty,
                 'contractor_invite_email' => $email,
             ]);
 
@@ -97,11 +114,13 @@ final class DealService
             $customer,
             NotificationType::DealCreated,
             'Сделка создана',
-            "Сделка №{$deal->deal_number} «{$deal->title}» создана. Ожидаем исполнителя.",
+            $isPublic
+                ? "Открытый заказ №{$deal->deal_number} «{$deal->title}» опубликован."
+                : "Сделка №{$deal->deal_number} «{$deal->title}» создана. Ожидаем исполнителя.",
             ['deal_id' => $deal->id],
         );
 
-        if ($contractor) {
+        if (! $isPublic && $contractor) {
             $this->notifier->send(
                 $contractor,
                 NotificationType::DealInvitation,
@@ -119,11 +138,47 @@ final class DealService
         return match ($action) {
             DealAction::AcceptInvitation => $this->accept($deal, $user),
             DealAction::DeclineInvitation => $this->decline($deal, $user),
+            DealAction::Claim => $this->claim($deal, $user),
             DealAction::ConfirmContract => $this->confirmContract($deal, $user),
             DealAction::MarkWorkCompleted => $this->markWorkCompleted($deal, $user),
             DealAction::ConfirmCompletion => $this->confirmCompletion($deal, $user),
             DealAction::OpenDispute => throw new ApiException('USE_DISPUTE_ENDPOINT', 'Откройте спор через POST /deals/{id}/disputes', 422),
         };
+    }
+
+    public function claim(Deal $deal, User $user): Deal
+    {
+        $this->stateMachine->assertCan($deal, $user, DealAction::Claim);
+
+        return DB::transaction(function () use ($deal, $user) {
+            $deal = Deal::query()->lockForUpdate()->findOrFail($deal->id);
+            $this->stateMachine->assertCan($deal, $user, DealAction::Claim);
+
+            $deal->update([
+                'status' => DealStatus::ContractConfirmed,
+                'contractor_user_id' => $user->id,
+                'contractor_invite_email' => Str::lower($user->email),
+            ]);
+
+            $this->refreshContractBody($deal);
+
+            $this->audit->record(AuditAction::DealClaimed, $deal, $user, $deal->id, [
+                'from' => DealStatus::AwaitingExecutor->value,
+                'to' => DealStatus::ContractConfirmed->value,
+            ]);
+
+            $deal = $deal->fresh(['customer', 'contractor']);
+
+            $this->notifier->send(
+                $deal->customer,
+                NotificationType::DealInvitation,
+                'Исполнитель откликнулся на заказ',
+                "Исполнитель откликнулся на заказ №{$deal->deal_number}. Подтвердите договор.",
+                ['deal_id' => $deal->id],
+            );
+
+            return $deal;
+        });
     }
 
     public function accept(Deal $deal, User $user): Deal

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DealStatus;
+use App\Enums\DealVisibility;
 use App\Exceptions\ApiException;
 use Database\Factories\DealFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +23,8 @@ class Deal extends Model
     protected $fillable = [
         'deal_number',
         'status',
+        'visibility',
+        'specialty',
         'title',
         'description',
         'amount_tenge',
@@ -44,6 +47,7 @@ class Deal extends Model
     {
         return [
             'status' => DealStatus::class,
+            'visibility' => DealVisibility::class,
             'amount_tenge' => 'integer',
             'commission_rate_bps' => 'integer',
             'commission_amount_tenge' => 'integer',
@@ -65,8 +69,11 @@ class Deal extends Model
 
         $user = auth()->user();
 
-        if ($user instanceof User && ! $user->isAdmin() && ! $deal->isParticipant($user)) {
-            throw ApiException::notFound('Сделка не найдена');
+        if ($user instanceof User && ! $user->isAdmin() && ! $deal->isParticipant($user) && ! $deal->isClaimableBy($user)) {
+            // Contractors may resolve public deals to claim or get "already taken".
+            if (! ($user->isContractor() && $deal->visibility === DealVisibility::Public)) {
+                throw ApiException::notFound('Сделка не найдена');
+            }
         }
 
         return $deal;
@@ -118,12 +125,33 @@ class Deal extends Model
         }
 
         return $user->isContractor()
+            && filled($this->contractor_invite_email)
             && Str::lower($this->contractor_invite_email) === Str::lower($user->email);
+    }
+
+    public function isOpenOrder(): bool
+    {
+        return $this->visibility === DealVisibility::Public
+            && $this->status === DealStatus::AwaitingExecutor
+            && $this->contractor_user_id === null;
+    }
+
+    public function isClaimableBy(User $user): bool
+    {
+        return $user->isContractor() && $user->isActive() && $this->isOpenOrder();
     }
 
     public function reservedAmount(): int
     {
         return $this->amount_tenge - $this->commission_amount_tenge;
+    }
+
+    public function scopeOpenOrders(Builder $query): Builder
+    {
+        return $query
+            ->where('visibility', DealVisibility::Public)
+            ->where('status', DealStatus::AwaitingExecutor)
+            ->whereNull('contractor_user_id');
     }
 
     public function scopeForUser(Builder $query, User $user): Builder

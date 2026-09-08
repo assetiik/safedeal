@@ -4,6 +4,7 @@ namespace App\Domain\Deals;
 
 use App\Enums\DealAction;
 use App\Enums\DealStatus;
+use App\Enums\DealVisibility;
 use App\Enums\UserRole;
 use App\Exceptions\ApiException;
 use App\Models\Deal;
@@ -18,7 +19,7 @@ final class DealStateMachine
     public function allowedFrom(DealAction $action): array
     {
         return match ($action) {
-            DealAction::AcceptInvitation, DealAction::DeclineInvitation => [DealStatus::AwaitingExecutor],
+            DealAction::AcceptInvitation, DealAction::DeclineInvitation, DealAction::Claim => [DealStatus::AwaitingExecutor],
             DealAction::ConfirmContract => [DealStatus::ContractConfirmed],
             DealAction::ReservePayment => [DealStatus::AwaitingPayment],
             DealAction::MarkWorkCompleted => [DealStatus::MoneyReserved, DealStatus::InProgress],
@@ -44,6 +45,12 @@ final class DealStateMachine
             throw ApiException::blocked();
         }
 
+        if ($action === DealAction::Claim) {
+            $this->assertCanClaim($deal, $user);
+
+            return;
+        }
+
         if (! $deal->isParticipant($user)) {
             throw ApiException::notFound('Сделка не найдена');
         }
@@ -58,6 +65,7 @@ final class DealStateMachine
             DealAction::ReservePayment, DealAction::ConfirmCompletion => $this->assertRole($user, UserRole::Customer, $action),
             DealAction::ConfirmContract => $this->assertCanConfirmContract($deal, $user),
             DealAction::OpenDispute => $this->assertParty($deal, $user),
+            DealAction::Claim => $this->assertCanClaim($deal, $user),
         };
     }
 
@@ -99,12 +107,37 @@ final class DealStateMachine
     {
         $this->assertRole($user, UserRole::Contractor, DealAction::AcceptInvitation);
 
+        if ($deal->visibility === DealVisibility::Public && ! filled($deal->contractor_invite_email)) {
+            throw ApiException::forbidden('Для открытого заказа используйте действие claim');
+        }
+
         if ($deal->contractor_user_id !== null && $deal->contractor_user_id !== $user->id) {
             throw ApiException::notFound('Сделка не найдена');
         }
 
-        if (Str::lower($deal->contractor_invite_email) !== Str::lower($user->email)) {
+        if (Str::lower((string) $deal->contractor_invite_email) !== Str::lower($user->email)) {
             throw ApiException::forbidden('Приглашение отправлено на другой email');
+        }
+    }
+
+    private function assertCanClaim(Deal $deal, User $user): void
+    {
+        $this->assertRole($user, UserRole::Contractor, DealAction::Claim);
+
+        if ($deal->customer_user_id === $user->id) {
+            throw ApiException::forbidden('Нельзя откликнуться на собственный заказ');
+        }
+
+        if ($deal->contractor_user_id !== null) {
+            throw ApiException::conflict('DEAL_ALREADY_CLAIMED', 'Заказ уже занят другим исполнителем');
+        }
+
+        if (! in_array($deal->status, $this->allowedFrom(DealAction::Claim), true)) {
+            throw ApiException::invalidTransition($deal->status, DealAction::Claim);
+        }
+
+        if ($deal->visibility !== DealVisibility::Public) {
+            throw ApiException::forbidden('Откликнуться можно только на открытый заказ');
         }
     }
 

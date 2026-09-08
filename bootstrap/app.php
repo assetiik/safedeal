@@ -59,7 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => $e->validator->errors()->first(),
                     'details' => $e->errors(),
                 ],
-            ], 400);
+            ], 422);
         });
 
         $exceptions->render(function (AuthenticationException $e, Request $request): mixed {

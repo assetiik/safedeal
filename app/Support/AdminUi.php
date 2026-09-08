@@ -168,6 +168,7 @@ final class AdminUi
             'deal.created' => 'создал сделку',
             'deal.accepted' => 'принял приглашение в сделку',
             'deal.declined' => 'отклонил приглашение в сделку',
+            'deal.claimed' => 'откликнулся на открытый заказ',
             'deal.contract_confirmed' => 'подтвердил договор',
             'deal.status_forced' => 'изменил статус сделки',
             'deal.work_started' => 'начал работу по сделке',

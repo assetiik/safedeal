@@ -11,6 +11,7 @@ enum AuditAction: string
     case ProfileUpdated = 'profile.updated';
     case DealCreated = 'deal.created';
     case DealAccepted = 'deal.accepted';
+    case DealClaimed = 'deal.claimed';
     case DealDeclined = 'deal.declined';
     case DealContractConfirmed = 'deal.contract_confirmed';
     case DealStatusForced = 'deal.status_forced';

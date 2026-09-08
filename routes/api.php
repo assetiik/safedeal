@@ -40,6 +40,7 @@ Route::prefix('v1')->group(function (): void {
 
             Route::get('deals', [DealController::class, 'index']);
             Route::post('deals', [DealController::class, 'store']);
+            Route::get('orders/open', [DealController::class, 'openOrders']);
             Route::get('deals/{deal}', [DealController::class, 'show']);
             Route::post('deals/{deal}/actions/{action}', [DealController::class, 'action']);
             Route::get('deals/{deal}/contract', [DealController::class, 'contract']);

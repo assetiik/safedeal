@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CreateDealRequest;
 use App\Http\Resources\Api\V1\DealListResource;
 use App\Http\Resources\Api\V1\DealResource;
+use App\Http\Resources\Api\V1\OpenOrderResource;
 use App\Http\Support\ApiDate;
 use App\Http\Support\ApiPaginator;
 use App\Models\Deal;
@@ -25,12 +26,18 @@ class DealController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $filter = $request->string('filter')->toString();
+        $visibility = $request->string('visibility')->toString();
+
+        if (($filter === 'open' || $visibility === 'public') && $user->isContractor()) {
+            return $this->openOrders($request);
+        }
+
         $query = Deal::query()
             ->with(['customer.profile', 'contractor.profile'])
             ->forUser($user)
             ->orderByDesc('updated_at');
 
-        $filter = $request->string('filter')->toString();
         match ($filter) {
             'active' => $query->whereNotIn('status', [DealStatus::Completed, DealStatus::Draft, DealStatus::Refunded, DealStatus::PayoutCompleted]),
             'completed' => $query->whereIn('status', [DealStatus::Completed, DealStatus::PayoutCompleted]),
@@ -55,6 +62,41 @@ class DealController extends Controller
         return ApiPaginator::make(
             $query->paginate(ApiPaginator::pageSize($request)),
             DealListResource::class,
+            $request,
+        );
+    }
+
+    public function openOrders(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->isContractor()) {
+            throw ApiException::forbidden('Лента открытых заказов доступна только исполнителям');
+        }
+
+        $query = Deal::query()
+            ->with(['customer.profile'])
+            ->openOrders()
+            ->where('customer_user_id', '!=', $user->id)
+            ->orderByDesc('created_at');
+
+        $specialty = trim($request->string('specialty')->toString());
+        if ($specialty !== '') {
+            $query->where('specialty', $specialty);
+        }
+
+        $q = trim($request->string('q')->toString());
+        if ($q !== '') {
+            $query->where(function ($inner) use ($q) {
+                $inner->where('title', 'like', '%'.$q.'%')
+                    ->orWhere('description', 'like', '%'.$q.'%')
+                    ->orWhereHas('customer.profile', fn ($p) => $p->where('display_name', 'like', '%'.$q.'%'));
+            });
+        }
+
+        return ApiPaginator::make(
+            $query->paginate(ApiPaginator::pageSize($request)),
+            OpenOrderResource::class,
             $request,
         );
     }

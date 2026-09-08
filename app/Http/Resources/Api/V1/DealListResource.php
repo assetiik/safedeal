@@ -25,6 +25,8 @@ class DealListResource extends JsonResource
             'title' => $this->title,
             'status' => $this->status->value,
             'status_label' => $this->status->labelRu(),
+            'visibility' => $this->visibility?->value ?? 'private',
+            'specialty' => $this->specialty,
             'amount_tenge' => $this->amount_tenge,
             'currency' => $this->currency,
             'counterparty_name' => $counterparty,

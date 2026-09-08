@@ -39,6 +39,8 @@ class DealResource extends JsonResource
             'deal_number' => $this->deal_number,
             'status' => $this->status->value,
             'status_label' => $this->status->labelRu(),
+            'visibility' => $this->visibility?->value ?? 'private',
+            'specialty' => $this->specialty,
             'title' => $this->title,
             'description' => $this->description,
             'amount_tenge' => $this->amount_tenge,
