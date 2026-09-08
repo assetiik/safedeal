@@ -27,6 +27,9 @@
 
 <form method="GET" action="{{ route('admin.documents.index') }}" class="mb-4">
     <input type="hidden" name="type" value="{{ $type }}">
+    @if (! empty($dealId))
+        <input type="hidden" name="deal_id" value="{{ $dealId }}">
+    @endif
     <div class="flex gap-2.5">
         <div class="relative min-w-0 flex-1">
             <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted">
@@ -50,9 +53,18 @@
     </div>
 </form>
 
+@if (! empty($dealId))
+    <div class="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm">
+        <span class="text-brand-700">Фильтр: документы сделки
+            <strong>{{ $filteredDeal ? DealCode::format($filteredDeal) : $dealId }}</strong>
+        </span>
+        <a href="{{ route('admin.documents.index', ['type' => $type, 'q' => $q]) }}" class="font-semibold text-brand-600 hover:underline">Сбросить</a>
+    </div>
+@endif
+
 <div class="mb-5 flex flex-wrap gap-2.5">
     @foreach ($filters as $key => $label)
-        <a href="{{ route('admin.documents.index', ['type' => $key, 'q' => $q]) }}"
+        <a href="{{ route('admin.documents.index', array_filter(['type' => $key, 'q' => $q, 'deal_id' => $dealId ?: null])) }}"
            @class([
                'rounded-2xl px-4 py-2 text-sm font-semibold transition',
                'bg-brand-500 text-white shadow-[0_8px_18px_rgba(59,110,245,0.25)]' => $type === $key,

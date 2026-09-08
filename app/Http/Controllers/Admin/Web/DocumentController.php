@@ -28,11 +28,21 @@ class DocumentController extends Controller
             $query->where('type', $type);
         }
 
+        $dealId = $request->string('deal_id')->toString();
+        if ($dealId !== '') {
+            $query->where('deal_id', $dealId);
+        }
+
         $q = trim($request->string('q')->toString());
         if ($q !== '') {
             $query->where(function ($inner) use ($q) {
                 $inner->where('title', 'like', '%'.$q.'%')
                     ->orWhere('file_name', 'like', '%'.$q.'%');
+
+                $number = ltrim($q, '#');
+                if (ctype_digit($number)) {
+                    $inner->orWhereHas('deal', fn ($d) => $d->where('deal_number', (int) $number));
+                }
             });
         }
 
@@ -40,6 +50,8 @@ class DocumentController extends Controller
             'documents' => $query->paginate(20)->withQueryString(),
             'type' => $type,
             'q' => $q,
+            'dealId' => $dealId,
+            'filteredDeal' => $dealId !== '' ? Deal::query()->find($dealId) : null,
             'deals' => Deal::query()->latest()->limit(50)->get(['id', 'deal_number', 'title']),
         ]);
     }

@@ -196,7 +196,7 @@
     {{-- Menu links --}}
     <section class="panel overflow-hidden" x-data="{ termsOpen: false }">
         @if ($deal->contract)
-            <a href="{{ route('admin.documents.index', ['q' => DealCode::short($deal)]) }}" class="flex items-center border-b border-line px-5 py-4 transition hover:bg-brand-50/40" style="gap: 14px;">
+            <a href="{{ route('admin.documents.index', ['deal_id' => $deal->id, 'type' => 'contract']) }}" class="flex items-center border-b border-line px-5 py-4 transition hover:bg-brand-50/40" style="gap: 14px;">
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-500">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                 </div>
@@ -228,14 +228,45 @@
             @endif
         </div>
 
-        <a href="{{ route('admin.documents.index', ['q' => DealCode::short($deal)]) }}" class="flex items-center border-b border-line px-5 py-4 transition hover:bg-brand-50/40" style="gap: 14px;">
-            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-500">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+        <div x-data="{ docsOpen: true }">
+            <button type="button" @click="docsOpen = !docsOpen" class="flex w-full items-center border-b border-line px-5 py-4 text-left transition hover:bg-brand-50/40" style="gap: 14px;">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+                </div>
+                <div class="min-w-0 flex-1 text-sm font-semibold">Документы</div>
+                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{{ $deal->documents->count() }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4 text-muted transition" :class="docsOpen && 'rotate-90'"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+            </button>
+            <div x-cloak x-show="docsOpen" x-transition class="space-y-2 border-b border-line bg-surface px-5 py-4">
+                @forelse ($deal->documents as $doc)
+                    <div class="flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3">
+                        <div class="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl {{ AdminUi::fileIconTone($doc->file_name) }}">
+                            <span class="text-[10px] font-bold leading-none">{{ AdminUi::fileExtension($doc->file_name) }}</span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="truncate text-sm font-semibold text-ink">{{ $doc->file_name ?: $doc->title }}</div>
+                            <div class="mt-0.5 text-xs text-muted">
+                                {{ AdminUi::documentLabel($doc->type) }}
+                                · {{ AdminUi::fileSize((int) $doc->size_bytes) }}
+                                · {{ $doc->created_at?->timezone('Asia/Almaty')->format('d.m.Y H:i') }}
+                            </div>
+                            @if ($doc->title && $doc->title !== $doc->file_name)
+                                <div class="mt-0.5 truncate text-xs text-muted">{{ $doc->title }}</div>
+                            @endif
+                        </div>
+                        <a href="{{ route('admin.documents.download', $doc) }}" class="btn-ghost shrink-0 px-3 py-2 text-xs">
+                            Скачать
+                        </a>
+                    </div>
+                @empty
+                    <div class="py-6 text-center text-sm text-muted">Документов по этой сделке пока нет</div>
+                @endforelse
+                <a href="{{ route('admin.documents.index', ['deal_id' => $deal->id]) }}" class="inline-flex items-center gap-1 pt-1 text-sm font-semibold text-brand-600">
+                    Все документы сделки
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                </a>
             </div>
-            <div class="min-w-0 flex-1 text-sm font-semibold">Документы</div>
-            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{{ $deal->documents->count() }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4 text-muted"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-        </a>
+        </div>
 
         <div x-data="{ historyOpen: false }">
             <button type="button" @click="historyOpen = !historyOpen" class="flex w-full items-center px-5 py-4 text-left transition hover:bg-brand-50/40" style="gap: 14px;">

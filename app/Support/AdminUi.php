@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\DealStatus;
 use App\Enums\DisputeStatus;
+use App\Enums\DocumentType;
 use App\Enums\PaymentType;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
@@ -73,6 +74,16 @@ final class AdminUi
             PaymentType::Reserve => 'Резерв',
             PaymentType::Payout, PaymentType::PartialPayout => 'Выплата исполнителю',
             PaymentType::Refund, PaymentType::PartialRefund => 'Возврат заказчику',
+        };
+    }
+
+    public static function documentLabel(DocumentType $type): string
+    {
+        return match ($type) {
+            DocumentType::Contract => 'Договор',
+            DocumentType::Technical => 'Технический',
+            DocumentType::Act => 'Акт',
+            DocumentType::Other => 'Прочее',
         };
     }
 

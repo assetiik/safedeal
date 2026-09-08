@@ -67,7 +67,7 @@ class DealController extends Controller
             'contractor.profile',
             'contract',
             'payments',
-            'documents',
+            'documents' => fn ($q) => $q->latest('created_at'),
             'dispute.events',
             'auditLogs' => fn ($q) => $q->latest('created_at')->limit(20),
         ]);
