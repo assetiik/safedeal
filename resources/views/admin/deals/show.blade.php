@@ -237,7 +237,7 @@
                 <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{{ $deal->documents->count() }}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-4 w-4 text-muted transition" :class="docsOpen && 'rotate-90'"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
             </button>
-            <div x-cloak x-show="docsOpen" x-transition class="space-y-2 border-b border-line bg-surface px-5 py-4">
+            <div x-show="docsOpen" class="space-y-2 border-b border-line bg-surface px-5 py-4">
                 @forelse ($deal->documents as $doc)
                     <div class="flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3">
                         <div class="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl {{ AdminUi::fileIconTone($doc->file_name) }}">
