@@ -264,7 +264,7 @@ final class PaymentService
     {
         $steps = ['deal_created', 'contract_confirmed', 'payment_started', 'money_reserved'];
         $completedUntil = match (true) {
-            $reserved || in_array($deal->status, [DealStatus::MoneyReserved, DealStatus::InProgress, DealStatus::WorkCompleted, DealStatus::AwaitingCustomer, DealStatus::Completed, DealStatus::Dispute, DealStatus::Refunded], true) => 3,
+            $reserved || in_array($deal->status, [DealStatus::MoneyReserved, DealStatus::InProgress, DealStatus::WorkCompleted, DealStatus::AwaitingCustomer, DealStatus::Completed, DealStatus::PayoutCompleted, DealStatus::Dispute, DealStatus::Refunded], true) => 3,
             $deal->status === DealStatus::AwaitingPayment => 2,
             $deal->status === DealStatus::ContractConfirmed => 1,
             default => 0,

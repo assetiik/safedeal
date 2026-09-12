@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Web;
 
 use App\Domain\Deals\DealService;
 use App\Enums\DealStatus;
+use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Deal;
 use Illuminate\Http\RedirectResponse;
@@ -69,12 +70,19 @@ class DealController extends Controller
             'payments',
             'documents' => fn ($q) => $q->latest('created_at'),
             'dispute.events',
-            'auditLogs' => fn ($q) => $q->latest('created_at')->limit(20),
+            'auditLogs' => fn ($q) => $q->with('actor.profile')->latest('created_at')->limit(50),
         ]);
+
+        $canPayout = $deal->payments
+            ->where('type', \App\Enums\PaymentType::Reserve)
+            ->where('status', PaymentStatus::Succeeded)
+            ->isNotEmpty()
+            && ! in_array($deal->status, [DealStatus::PayoutCompleted, DealStatus::Refunded, DealStatus::Dispute], true);
 
         return view('admin.deals.show', [
             'deal' => $deal,
             'statuses' => DealStatus::cases(),
+            'canPayout' => $canPayout,
         ]);
     }
 
@@ -93,5 +101,20 @@ class DealController extends Controller
         );
 
         return back()->with('success', 'Статус сделки обновлён');
+    }
+
+    public function payout(Request $request, Deal $deal): RedirectResponse
+    {
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $this->deals->adminPayout(
+            $deal,
+            $request->user(),
+            $data['reason'] ?? 'Выплата через админку (демо)',
+        );
+
+        return back()->with('success', 'Выплата исполнителю выполнена');
     }
 }

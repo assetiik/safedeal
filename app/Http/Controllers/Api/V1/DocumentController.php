@@ -25,6 +25,7 @@ class DocumentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Document::query()
+            ->with(['deal', 'uploadedBy.profile'])
             ->whereHas('deal', fn ($q) => $q->forUser($request->user()))
             ->orderByDesc('created_at');
 
@@ -53,7 +54,7 @@ class DocumentController extends Controller
 
     public function forDeal(Request $request, Deal $deal): JsonResponse
     {
-        $docs = $deal->documents()->orderByDesc('created_at')->get();
+        $docs = $deal->documents()->with(['deal', 'uploadedBy.profile'])->orderByDesc('created_at')->get();
 
         return response()->json([
             'data' => DocumentResource::collection($docs)->resolve($request),
@@ -70,7 +71,10 @@ class DocumentController extends Controller
             $request->string('title')->toString(),
         );
 
-        return response()->json((new DocumentResource($document))->resolve($request), 201);
+        return response()->json(
+            (new DocumentResource($document->load(['deal', 'uploadedBy.profile'])))->resolve($request),
+            201,
+        );
     }
 
     public function show(Request $request, Document $document): JsonResponse

@@ -12,10 +12,16 @@ class DisputeResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $deal = $this->relationLoaded('deal') ? $this->deal : null;
+
         return [
             'id' => $this->id,
             'deal_id' => $this->deal_id,
-            'deal_number' => $this->whenLoaded('deal', fn () => $this->deal?->deal_number),
+            'deal_number' => $deal?->deal_number,
+            'deal_title' => $deal?->title,
+            'customer_name' => $deal?->customer?->displayName(),
+            'contractor_name' => $deal?->contractor?->displayName()
+                ?? (filled($deal?->contractor_invite_email) ? $deal->contractor_invite_email : null),
             'status' => $this->status->value,
             'reason' => $this->reason,
             'opened_by_user_id' => $this->opened_by_user_id,
@@ -24,7 +30,7 @@ class DisputeResource extends JsonResource
             'customer_amount_tenge' => $this->customer_amount_tenge,
             'contractor_amount_tenge' => $this->contractor_amount_tenge,
             'resolved_at' => ApiDate::iso($this->resolved_at),
-            'amount_tenge' => $this->whenLoaded('deal', fn () => $this->deal?->amount_tenge),
+            'amount_tenge' => $deal?->amount_tenge,
             'events' => $this->whenLoaded('events', fn () => $this->events->map(fn ($event) => [
                 'id' => $event->id,
                 'type' => $event->type,

@@ -25,6 +25,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('deals', [DealController::class, 'index'])->name('deals.index');
         Route::get('deals/{deal}', [DealController::class, 'show'])->name('deals.show');
         Route::post('deals/{deal}/force-status', [DealController::class, 'forceStatus'])->name('deals.force-status');
+        Route::post('deals/{deal}/payout', [DealController::class, 'payout'])->name('deals.payout');
 
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');

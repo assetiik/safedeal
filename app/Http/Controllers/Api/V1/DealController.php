@@ -8,11 +8,13 @@ use App\Enums\DealStatus;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CreateDealRequest;
+use App\Http\Resources\Api\V1\DealHistoryResource;
 use App\Http\Resources\Api\V1\DealListResource;
 use App\Http\Resources\Api\V1\DealResource;
 use App\Http\Resources\Api\V1\OpenOrderResource;
 use App\Http\Support\ApiDate;
 use App\Http\Support\ApiPaginator;
+use App\Models\AuditLog;
 use App\Models\Deal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -157,5 +159,19 @@ class DealController extends Controller
         return response()->json(
             (new DealResource($deal->load(['customer.profile', 'contractor.profile', 'payments'])))->resolve($request),
         );
+    }
+
+    public function history(Request $request, Deal $deal): JsonResponse
+    {
+        $logs = AuditLog::query()
+            ->with('actor.profile')
+            ->where('deal_id', $deal->id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        return response()->json([
+            'data' => DealHistoryResource::collection($logs)->resolve($request),
+        ]);
     }
 }

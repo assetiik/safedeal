@@ -13,6 +13,7 @@ use App\Enums\DealStatus;
 use App\Enums\DealVisibility;
 use App\Enums\DocumentType;
 use App\Enums\NotificationType;
+use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\UserRole;
 use App\Exceptions\ApiException;
@@ -371,10 +372,10 @@ final class DealService
             $amount = $deal->reservedAmount();
             $this->payments->payout($deal, $amount, $user, PaymentType::Payout);
 
-            $deal->update(['status' => DealStatus::Completed, 'funds_frozen' => false]);
+            $deal->update(['status' => DealStatus::PayoutCompleted, 'funds_frozen' => false]);
 
             $this->audit->record(AuditAction::DealCompletionConfirmed, $deal, $user, $deal->id, [
-                'to' => DealStatus::Completed->value,
+                'to' => DealStatus::PayoutCompleted->value,
                 'payout_tenge' => $amount,
             ]);
 
@@ -408,6 +409,60 @@ final class DealService
             ]);
 
             return $deal->fresh();
+        });
+    }
+
+    /**
+     * Admin demo helper: pay out reserved funds to contractor (same as customer confirm_completion).
+     */
+    public function adminPayout(Deal $deal, User $admin, string $reason): Deal
+    {
+        if (! $admin->isAdmin()) {
+            throw ApiException::forbidden();
+        }
+
+        if ($this->payments->successfulReserve($deal) === null) {
+            throw new ApiException('RESERVE_MISSING', 'Нет успешного резерва средств', 409);
+        }
+
+        $alreadyPaid = $deal->payments()
+            ->whereIn('type', [PaymentType::Payout, PaymentType::PartialPayout])
+            ->where('status', PaymentStatus::Succeeded)
+            ->exists();
+
+        if ($alreadyPaid && $deal->status === DealStatus::PayoutCompleted) {
+            throw ApiException::conflict('ALREADY_PAID', 'Выплата по сделке уже выполнена');
+        }
+
+        return DB::transaction(function () use ($deal, $admin, $reason, $alreadyPaid) {
+            $deal = Deal::query()->lockForUpdate()->findOrFail($deal->id);
+
+            if (! $alreadyPaid) {
+                $this->payments->payout($deal, $deal->reservedAmount(), $admin, PaymentType::Payout);
+            }
+
+            $from = $deal->status;
+            $deal->update([
+                'status' => DealStatus::PayoutCompleted,
+                'funds_frozen' => false,
+            ]);
+
+            $this->audit->record(AuditAction::DealStatusForced, $deal, $admin, $deal->id, [
+                'from' => $from->value,
+                'to' => DealStatus::PayoutCompleted->value,
+                'reason' => $reason,
+                'admin_payout' => true,
+            ]);
+
+            $deal = $deal->fresh(['customer', 'contractor']);
+            $this->notifier->dealParties(
+                $deal,
+                NotificationType::PayoutCompleted,
+                'Выплата исполнителю выполнена',
+                "По сделке №{$deal->deal_number} выполнена выплата администратором.",
+            );
+
+            return $deal;
         });
     }
 

@@ -32,7 +32,7 @@ class DisputeController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Dispute::query()
-            ->with('deal')
+            ->with(['deal.customer.profile', 'deal.contractor.profile'])
             ->whereHas('deal', fn ($q) => $q->forUser($request->user()))
             ->orderByDesc('updated_at');
 
@@ -52,7 +52,7 @@ class DisputeController extends Controller
 
     public function show(Request $request, Dispute $dispute): JsonResponse
     {
-        $dispute->load(['deal.documents', 'events', 'openedBy.profile']);
+        $dispute->load(['deal.customer.profile', 'deal.contractor.profile', 'deal.documents', 'events', 'openedBy.profile']);
 
         return response()->json((new DisputeResource($dispute))->resolve($request));
     }

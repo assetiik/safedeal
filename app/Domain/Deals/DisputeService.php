@@ -139,13 +139,13 @@ final class DisputeService
                 $this->payments->refund($deal, $customerAmount, $admin, $refundType);
             }
 
-            $dealStatus = $contractorAmount > 0 ? DealStatus::Completed : DealStatus::Refunded;
-            if ($type === DisputeResolutionType::RefundCustomer) {
-                $dealStatus = DealStatus::Refunded;
-            }
-            if ($type === DisputeResolutionType::PayoutContractor) {
-                $dealStatus = DealStatus::Completed;
-            }
+            $dealStatus = match ($type) {
+                DisputeResolutionType::RefundCustomer => DealStatus::Refunded,
+                DisputeResolutionType::PayoutContractor => DealStatus::PayoutCompleted,
+                DisputeResolutionType::Partial => $contractorAmount > 0
+                    ? DealStatus::PayoutCompleted
+                    : DealStatus::Refunded,
+            };
 
             $deal->update([
                 'status' => $dealStatus,

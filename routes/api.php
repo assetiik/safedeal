@@ -42,10 +42,12 @@ Route::prefix('v1')->group(function (): void {
             Route::post('deals', [DealController::class, 'store']);
             Route::get('orders/open', [DealController::class, 'openOrders']);
             Route::get('deals/{deal}', [DealController::class, 'show']);
+            Route::get('deals/{deal}/history', [DealController::class, 'history']);
             Route::post('deals/{deal}/actions/{action}', [DealController::class, 'action']);
             Route::get('deals/{deal}/contract', [DealController::class, 'contract']);
             Route::post('deals/{deal}/contract/confirm', [DealController::class, 'confirmContract']);
 
+            Route::get('payments', [PaymentController::class, 'index']);
             Route::get('deals/{deal}/payment', [PaymentController::class, 'show']);
             Route::post('deals/{deal}/payment/reserve', [PaymentController::class, 'reserve'])
                 ->middleware('throttle:payments');

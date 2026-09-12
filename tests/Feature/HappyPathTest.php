@@ -55,7 +55,7 @@ class HappyPathTest extends TestCase
 
         $this->authJson($customer, 'POST', "/api/v1/deals/{$dealId}/actions/confirm_completion")
             ->assertOk()
-            ->assertJsonPath('status', DealStatus::Completed->value);
+            ->assertJsonPath('status', DealStatus::PayoutCompleted->value);
 
         $this->authJson($customer, 'GET', '/api/v1/deals')
             ->assertOk()

@@ -3,9 +3,7 @@
 namespace App\Domain\Auth;
 
 use App\Domain\Audit\AuditLogger;
-use App\Domain\Notifications\Notifier;
 use App\Enums\AuditAction;
-use App\Enums\NotificationType;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Exceptions\ApiException;
@@ -21,7 +19,6 @@ final class AuthService
     public function __construct(
         private readonly TokenService $tokens,
         private readonly AuditLogger $audit,
-        private readonly Notifier $notifier,
     ) {}
 
     /**
@@ -63,15 +60,9 @@ final class AuthService
             throw ApiException::blocked();
         }
 
-        $this->audit->record(AuditAction::UserLoggedIn, $user, $user);
-        $this->notifier->send(
-            $user,
-            NotificationType::AccountSecurity,
-            'Новый вход',
-            'Выполнен вход в аккаунт. Если это были не вы — смените пароль.',
-            ['ip' => request()?->ip()],
-            email: false,
-        );
+        $this->audit->record(AuditAction::UserLoggedIn, $user, $user, payload: [
+            'ip' => request()?->ip(),
+        ]);
 
         return [
             'user' => $user->load('profile'),

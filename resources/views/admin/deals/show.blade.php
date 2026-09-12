@@ -280,8 +280,11 @@
             <div x-cloak x-show="historyOpen" x-transition class="space-y-2 border-t border-line bg-surface px-5 py-4">
                 @forelse ($deal->auditLogs as $log)
                     <div class="rounded-xl bg-white px-3 py-2.5 text-sm">
-                        <div class="font-medium">{{ is_string($log->action) ? $log->action : ($log->action->value ?? '—') }}</div>
-                        <div class="mt-0.5 text-xs text-muted">{{ AdminUi::adminWhen($log->created_at) }}</div>
+                        <div class="font-medium">{{ AdminUi::auditActionLabel(is_string($log->action) ? $log->action : (string) ($log->action->value ?? $log->action)) }}</div>
+                        <div class="mt-0.5 text-xs text-muted">
+                            {{ $log->actor?->displayName() ?? 'Система' }}
+                            · {{ AdminUi::adminWhen($log->created_at) }}
+                        </div>
                     </div>
                 @empty
                     <div class="text-sm text-muted">Записей пока нет</div>
@@ -304,6 +307,16 @@
             </svg>
             <h2 class="font-display text-base font-bold">Только для администраторов</h2>
         </div>
+
+        @if ($canPayout ?? false)
+            <form method="POST" action="{{ route('admin.deals.payout', $deal) }}" class="mb-6 space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
+                @csrf
+                <div class="text-sm font-semibold text-emerald-800">Выплатить исполнителю</div>
+                <p class="text-xs text-emerald-700">Переведёт зарезервированные средства и поставит статус «Выплата исполнителю».</p>
+                <input type="hidden" name="reason" value="Выплата через админку (демо)">
+                <button class="btn-primary w-full bg-emerald-600 hover:bg-emerald-700">Выплатить</button>
+            </form>
+        @endif
 
         <form method="POST" action="{{ route('admin.deals.force-status', $deal) }}" class="space-y-4">
             @csrf

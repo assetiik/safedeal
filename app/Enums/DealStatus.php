@@ -51,7 +51,8 @@ enum DealStatus: string
             self::InProgress => 'В работе',
             self::WorkCompleted => 'Работа выполнена',
             self::AwaitingCustomer => 'Ожидает подтверждения',
-            self::Completed, self::PayoutCompleted => 'Завершена',
+            self::Completed => 'Завершена',
+            self::PayoutCompleted => 'Выплата исполнителю',
             self::Dispute => 'Спор',
             self::Refunded => 'Возврат средств',
         };

@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Payments\PaymentService;
+use App\Enums\PaymentStatus;
+use App\Enums\PaymentType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\DealResource;
 use App\Http\Resources\Api\V1\PaymentResource;
+use App\Http\Support\ApiPaginator;
 use App\Models\Deal;
+use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,6 +19,33 @@ class PaymentController extends Controller
     public function __construct(
         private readonly PaymentService $payments,
     ) {}
+
+    public function index(Request $request): JsonResponse
+    {
+        $query = Payment::query()
+            ->with('deal')
+            ->whereHas('deal', fn ($q) => $q->forUser($request->user()))
+            ->whereIn('type', [
+                PaymentType::Reserve,
+                PaymentType::Payout,
+                PaymentType::Refund,
+                PaymentType::PartialPayout,
+                PaymentType::PartialRefund,
+            ])
+            ->where('status', PaymentStatus::Succeeded)
+            ->orderByDesc('created_at');
+
+        $type = $request->string('type')->toString();
+        if ($type !== '') {
+            $query->where('type', $type);
+        }
+
+        return ApiPaginator::make(
+            $query->paginate(ApiPaginator::pageSize($request)),
+            PaymentResource::class,
+            $request,
+        );
+    }
 
     public function show(Request $request, Deal $deal): JsonResponse
     {
